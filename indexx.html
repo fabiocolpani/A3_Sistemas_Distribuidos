@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Lista de Boletos Fraudulentos</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 40px;
+      background: linear-gradient(to bottom, #8a7ba0, #5e5072);
+    }
+
+    h3 {
+      font-family: Arial, sans-serif;
+      font-size: 30px;
+      margin-top: 10px;
+      margin-bottom: 100px;
+      color: #ffff;
+    }
+  
+    h4 {
+      font-family: Arial, sans-serif;
+      font-size: 15px;
+      color: #ffffff;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      color: #ffff;
+      margin-top: 60px;
+    }
+
+    h1 {
+      font-family: Arial, sans-serif;
+      font-size: 150px;
+      background: linear-gradient(to right, rgb(255, 208, 255), rgb(230, 193, 255), rgb(201, 201, 255), rgb(185, 255, 185), rgb(255, 255, 189), rgb(255, 235, 198), rgb(255, 189, 189));
+      -webkit-background-clip: text;
+      color: transparent;
+      margin-top: 0;
+      margin-bottom: 5px;
+    }
+
+    input {
+      padding: 8px;
+      width: 300px;
+      margin-bottom: 20px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #3c913f;
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 0;
+      color: white;
+    }
+
+    li {
+      padding: 10px;
+      border-bottom: 2px solid #ffffff;
+      color: white;
+    }
+
+    .campo {
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>BoletoCheck™</h1>
+  <h3>Bem-vindos ao BoletoCheck™! Aqui você consegue pesquisar informações de boletos fraudulentos para checar se seu boleto é real, ou enviar um novo boleto fraudulento para ajudar outras pessoas!</h3>
+  <h4>feito por: Fabio Colpani, Felipe Freitas e Gabriel Abrantes.</h4>
+  <hr>
+  <!-- Formulário para Inserir Boleto -->
+  <h2>Inserir Novo Boleto:</h2>
+  <form id="formInserirBoleto">
+    <label for="codCnpj">CNPJ:</label>
+    <input type="text" id="codCnpj" required><br><br>
+
+    <label for="descricao">Descrição:</label>
+    <input type="text" id="descricao" required><br><br>
+
+    <label for="nomeGolpista">Nome do Beneficiário:</label>
+    <input type="text" id="nomeGolpista" required><br><br>
+
+    <label for="data">Data:</label>
+    <input type="date" id="data" required><br><br>
+
+    <button type="submit">Inserir Boleto</button>
+  </form>
+
+  <hr>
+  <h2>Pesquisar por Boletos Fraudulentos:</h2>
+  <!-- Campo de pesquisa -->
+  <input type="text" id="pesquisa" placeholder="Buscar por CNPJ ou Nome do Beneficiário"><br><br>
+
+  <!-- Lista de boletos -->
+  <ul id="lista-boletos"></ul>
+
+  <script>
+    // Função para carregar boletos existentes
+    async function carregarBoletos() {
+      const response = await fetch("http://localhost:8080/api/boletosnew");
+      const boletos = await response.json();
+      exibirBoletos(boletos);
+    }
+
+    // Função para exibir boletos na lista
+    function exibirBoletos(boletos) {
+      const lista = document.getElementById("lista-boletos");
+      lista.innerHTML = "";
+      boletos.forEach(boleto => {
+        const li = document.createElement("li");
+
+        li.innerHTML = `
+          <div class="campo"><strong>CNPJ:</strong> ${boleto.codCnpj}</div>
+          <div class="campo"><strong>Descrição:</strong> ${boleto.descricao}</div>
+          <div class="campo"><strong>Nome do Beneficiário:</strong> ${boleto.nomeGolpista}</div>
+          <div class="campo"><strong>Data:</strong> ${boleto.data}</div>
+        `;
+
+        lista.appendChild(li);
+      });
+    }
+
+    // Função de pesquisa
+    document.getElementById("pesquisa").addEventListener("input", async (e) => {
+      const termo = e.target.value.toLowerCase();
+      const response = await fetch("http://localhost:8080/api/boletosnew");
+      const boletos = await response.json();
+      const filtrados = boletos.filter(b =>
+        b.nomeGolpista.toLowerCase().includes(termo) ||
+        b.codCnpj.toLowerCase().includes(termo)
+      );
+      exibirBoletos(filtrados);
+    });
+
+    // Função para inserir um novo boleto
+    document.getElementById("formInserirBoleto").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const novoBoleto = {
+        codCnpj: document.getElementById("codCnpj").value,
+        descricao: document.getElementById("descricao").value,
+        nomeGolpista: document.getElementById("nomeGolpista").value,
+        data: document.getElementById("data").value // A data será tratada como string
+      };
+
+      // Enviando os dados para a API
+      const response = await fetch("http://localhost:8080/api/boletosnew", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(novoBoleto)
+      });
+
+      if (response.ok) {
+        alert("Boleto inserido com sucesso!");
+        carregarBoletos(); // Recarrega a lista de boletos
+      } else {
+        alert("Erro ao inserir boleto.");
+      }
+
+      // Limpar os campos do formulário
+      document.getElementById("formInserirBoleto").reset();
+    });
+
+    // Carregar boletos quando a página for carregada
+    carregarBoletos();
+  </script>
+</body>
+</html>
